@@ -1,0 +1,28 @@
+{
+  "name": "simple-mysql-query",
+  "version": "1.0.0",
+  "description": "simple mysql query with promise",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chrunlee/simple-mysql-query.git"
+  },
+  "keywords": [
+    "simple",
+    "mysql",
+    "query"
+  ],
+  "author": "chrunlee",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/chrunlee/simple-mysql-query/issues"
+  },
+  "homepage": "https://github.com/chrunlee/simple-mysql-query#readme",
+  "dependencies": {
+    "async": "^2.6.1",
+    "mysql": "^2.15.0"
+  }
+}

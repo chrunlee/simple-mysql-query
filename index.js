@@ -32,7 +32,7 @@ var query = function(list){
                         connection.query(sql, param||[], function (tErr, rows, fields) {
                             if (tErr) {
                                 connection.rollback(function () {
-                                    throw tErr;
+                                    reject(tErr);
                                 });
                             } else {
                                 cb(null,rows);

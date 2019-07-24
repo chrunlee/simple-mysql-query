@@ -5,12 +5,12 @@ var pool,configs;
 
 var query = function(list){
     if(list.host){
-        config = list;
+        configs = list;
         pool = mysql.createPool(list);
         return;
     }
     if(!pool){
-        pool = mysql.createPool(config);
+        pool = mysql.createPool(configs);
     }
     if(!list.length){
         list = [list];
@@ -32,6 +32,7 @@ var query = function(list){
                         connection.query(sql, param||[], function (tErr, rows, fields) {
                             if (tErr) {
                                 connection.rollback(function () {
+                                    pool.releaseConnection(connection);
                                     reject(tErr);
                                 });
                             } else {
@@ -45,7 +46,8 @@ var query = function(list){
                 async.parallel(funcAry, function (err, result) {
                     if (err) {
                         connection.rollback(function (err2) {
-                            connection.release();
+                            // connection.release();
+                            pool.releaseConnection(connection);
                             // connection.destroy();\
                             reject(err2);
                         });
@@ -53,12 +55,14 @@ var query = function(list){
                         connection.commit(function (err2, info) {
                             if (err2) {
                                 connection.rollback(function (err3) {
-                                    connection.release();
+                                    // connection.release();
+                                    pool.releaseConnection(connection);
                                     // connection.destroy();
                                     reject(err3);
                                 });
                             } else {
-                                connection.release();
+                                // connection.release();
+                                pool.releaseConnection(connection);
                                 // connection.destroy();
                                 resolve(result);
                             }

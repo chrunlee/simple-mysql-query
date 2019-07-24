@@ -74,5 +74,15 @@ var query = function(list){
     });   
 };
 
+function recheck(){
+    var sql = `show variables like 'wait_timeout'`;
+    if(pool){
+        query([{sql : sql,params : []}])
+        .then(rs=>{})
+        .catch(err=>{console.log(err);})
+    }
+}
+
+setInterval(recheck,15 * 1000);
 
 module.exports = query;

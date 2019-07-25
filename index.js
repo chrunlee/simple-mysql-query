@@ -4,7 +4,7 @@ var async = require('async');
 var pool,configs;
 
 var query = function(list){
-    if(list.host){
+    if(list.host && !pool){
         configs = list;
         pool = mysql.createPool(list);
         return;
@@ -20,6 +20,9 @@ var query = function(list){
             if (err) {
                 reject(err);
             }
+            if(!connection){
+                reject('connection is not connected');
+            }
             connection.beginTransaction(function (err) {
                 if (err) {
                     reject(err);
@@ -31,10 +34,7 @@ var query = function(list){
                         var param = sql_param.params;
                         connection.query(sql, param||[], function (tErr, rows, fields) {
                             if (tErr) {
-                                connection.rollback(function () {
-                                    pool.releaseConnection(connection);
-                                    reject(tErr);
-                                });
+                                cb(tErr);
                             } else {
                                 cb(null,rows);
                             }
@@ -46,24 +46,18 @@ var query = function(list){
                 async.parallel(funcAry, function (err, result) {
                     if (err) {
                         connection.rollback(function (err2) {
-                            // connection.release();
-                            pool.releaseConnection(connection);
-                            // connection.destroy();\
+                            connection.release();
                             reject(err2);
                         });
                     } else {
                         connection.commit(function (err2, info) {
                             if (err2) {
                                 connection.rollback(function (err3) {
-                                    // connection.release();
-                                    pool.releaseConnection(connection);
-                                    // connection.destroy();
+                                    connection.release();
                                     reject(err3);
                                 });
                             } else {
-                                // connection.release();
-                                pool.releaseConnection(connection);
-                                // connection.destroy();
+                                connection.release();
                                 resolve(result);
                             }
                         })
@@ -73,16 +67,5 @@ var query = function(list){
         }); 
     });   
 };
-
-function recheck(){
-    var sql = `show variables like 'wait_timeout'`;
-    if(pool){
-        query([{sql : sql,params : []}])
-        .then(rs=>{})
-        .catch(err=>{console.log(err);})
-    }
-}
-
-setInterval(recheck,15 * 1000);
 
 module.exports = query;

@@ -20,50 +20,52 @@ var query = function(list){
             if (err) {
                 reject(err);
             }
-            if(!connection){
+            if(connection && connection.beginTransaction){
+                connection.beginTransaction(function (err) {
+                    if (err) {
+                        connection.release();
+                        reject(err);
+                    }
+                    var funcAry = [];
+                    list.forEach(function (sql_param) {
+                        var temp = function (cb) {
+                            var sql = sql_param.sql;
+                            var param = sql_param.params;
+                            connection.query(sql, param||[], function (tErr, rows, fields) {
+                                if (tErr) {
+                                    cb(tErr);
+                                } else {
+                                    cb(null,rows);
+                                }
+                            })
+                        };
+                        funcAry.push(temp);
+                    });
+
+                    async.parallel(funcAry, function (err, result) {
+                        if (err) {
+                            connection.rollback(function (err2) {
+                                connection.release();
+                                reject(err2);
+                            });
+                        } else {
+                            connection.commit(function (err2, info) {
+                                if (err2) {
+                                    connection.rollback(function (err3) {
+                                        connection.release();
+                                        reject(err3);
+                                    });
+                                } else {
+                                    connection.release();
+                                    resolve(result);
+                                }
+                            })
+                        }
+                    });
+                }); 
+            }else{
                 reject('connection is not connected');
             }
-            connection.beginTransaction(function (err) {
-                if (err) {
-                    reject(err);
-                }
-                var funcAry = [];
-                list.forEach(function (sql_param) {
-                    var temp = function (cb) {
-                        var sql = sql_param.sql;
-                        var param = sql_param.params;
-                        connection.query(sql, param||[], function (tErr, rows, fields) {
-                            if (tErr) {
-                                cb(tErr);
-                            } else {
-                                cb(null,rows);
-                            }
-                        })
-                    };
-                    funcAry.push(temp);
-                });
-
-                async.parallel(funcAry, function (err, result) {
-                    if (err) {
-                        connection.rollback(function (err2) {
-                            connection.release();
-                            reject(err2);
-                        });
-                    } else {
-                        connection.commit(function (err2, info) {
-                            if (err2) {
-                                connection.rollback(function (err3) {
-                                    connection.release();
-                                    reject(err3);
-                                });
-                            } else {
-                                connection.release();
-                                resolve(result);
-                            }
-                        })
-                    }
-                });
-            });
         }); 
     });   
 };
